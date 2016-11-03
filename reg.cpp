@@ -15,6 +15,7 @@ main(int argc, char** argv)
   KeyChain keyChain;
   Face face(argv[1]);
   nfd::Controller ctrl(face, keyChain);
+  Scheduler scheduler(face.getIoService());
 
   nfd::ControlParameters params;
   params.setName("/test/prefix");
@@ -25,10 +26,14 @@ main(int argc, char** argv)
 
   ctrl.start<nfd::RibRegisterCommand>
     (params,
-     [=] (const nfd::ControlParameters&) {
-      std::cerr << "SUCCESS" << std::endl;
+     [&] (const nfd::ControlParameters&) {
+      std::cerr << "SUCCESS waiting" << std::endl;
+
+      scheduler.scheduleEvent(time::seconds(100), [] {
+          std::cerr << "DONE" << std::endl;
+        });
     },
-     [=] (const nfd::ControlResponse& resp) {
+     [&] (const nfd::ControlResponse& resp) {
        std::cerr << "FAILURE: " << resp.getText() << std::endl;
      },
      options);
